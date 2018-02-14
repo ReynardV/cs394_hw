@@ -1,0 +1,12 @@
+Vector Tree
+
+1) What looks like a copy & paste error on line 45 of vectree.cc, where instead of copying the left and right nodes it just copies the left one twice. Easily fixed by changing start_left to start_right on that line.
+
+
+
+Pointer Tree
+1) Well first of all the whole thing just doesn't really want to work for reasons unknown.
+
+2) There's something going on in pathToHelper that isn't working. I think it doesn't like me using insert to prepend strings, since it says "no matching member function for call to 'insert' "
+
+3) For some reason, only for getByPath, the program seems to have forgotten that value_t was defined in tree.hh??
