@@ -1,6 +1,8 @@
 #include "huffman.hh"
+
 #include <unordered_map>
 #include <queue>
+#include <iostream>
 
 namespace huffman {
 	using symbol_t = Huffman::symbol_t;
@@ -43,19 +45,21 @@ namespace huffman {
 		std::priority_queue<std::pair<std::vector<symbol_t>, int>, std::vector<std::pair<std::vector<symbol_t>, int>>, Huffman::Impl::compareValues> symbolSort;
 		// Oh boy. symbolSort is a priority queue that accepts pairs, and sorts them so the pair with the smallest value is on top. 
 		// The pairs it accepts contain one vector of symbols, and an int. 
-
-		std::unordered_map<symbol_t, int>::iterator it;
-		for (it = freqMap.begin(); it == freqMap.end(); it++){
-			std::pair <std::vector<symbol_t>, int> symbolList = {{it->first},it->second};
+		auto it = freqMap.begin();
+		while (it != freqMap.end()){
+			std::vector<symbol_t> vecList = {it->first};
+			auto symbolList = std::make_pair(vecList,it->second);
 			symbolSort.push(symbolList);
 			// We then take every element of freqMap and push it into symbolSort, after adjusting its structure to make the pair <vector of symbols, int>
-			//  Even though it's an unordered map, the fact that we're not retrieving a specific element, but instead are
+			// Even though it's an unordered map, the fact that we're not retrieving a specific element, but instead are
 			// just grabbing everything should mean it shouldn't take too long. I think.
+			it++;
 		};
-
+		for (unsigned i = 0; i < 256; ++i) {
+			encMap[i].clear(); // clearing out the encoding so each maketree has a fresh start.
+		};
 		while (symbolSort.size() != 1){ // We want to stop when the queue has only one element in it,
-										// since we push each composite element back into the queue
-			auto leftNode = symbolSort.top(); //reminder: left & right Nodes are of the format pair{vector{},int}
+			auto leftNode = symbolSort.top(); //reminder: left & right Nodes are of the format pair{vector{symbol_t},int}
 			symbolSort.pop();
 			auto rightNode = symbolSort.top(); 
 			symbolSort.pop();
@@ -69,7 +73,7 @@ namespace huffman {
 			}
 			std::vector<symbol_t> childList = leftNode.first;
 			childList.insert(childList.end(), rightNode.first.begin(), rightNode.first.end());
-			std::pair<std::vector<symbol_t>, int> newNode = {childList,leftNode.second+rightNode.second};
+			std::pair<std::vector<symbol_t>, int> newNode = std::make_pair(childList,leftNode.second+rightNode.second);
 			// I'm using the vector inside the pair to keep track of which nodes are the children of this one. With regards to encoding, it doesn't matter
 			// where they are on the tree. In this way, we build up the path it would have taken without having to build the actual tree itself. 
 			symbolSort.push(newNode);
@@ -118,18 +122,21 @@ namespace huffman {
 		while (output == 300){
 			if (begin+bitCount > end){
 				throw std::runtime_error("Symbol not found");
-			}
+			};
 			encoding_t input(begin, begin+bitCount); 
-			std::unordered_map<symbol_t, encoding_t>::iterator it; 
-			for (it = pImpl_->encMap.begin(); it == pImpl_->encMap.end(); it++){
+			std::unordered_map<symbol_t, encoding_t>::iterator it = pImpl_->encMap.begin(); 
+			int count = 0;
+			while (it != pImpl_->encMap.end()){
 				if (it->second == input){ // it's not possible for a leaf to continue leading on to another branch, so
 					output = it->first; // if the subvector is also an encoding in encMap, then we've found its symbol decoding. 
 					break;
 				};
-			bitCount++;
+				it++;
+				count++;
 			};
+			bitCount++;			
 		};
-		begin += bitCount;
+		begin += bitCount-1;
 		symbol_t eightBitOutput = output;
 		return eightBitOutput;
 	}
